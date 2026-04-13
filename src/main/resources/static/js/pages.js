@@ -1,96 +1,78 @@
-const API_BASE_URL = "http://localhost:8080";
+const API_BASE_URL = "";
 
 // =========================
-// BOOTSTRAP
+// BOOT
 // =========================
 document.addEventListener("DOMContentLoaded", () => {
-  wireNavigation();
-  runPageController();
+  setupGlobalNavigation();
+  routePage();
 });
 
-function runPageController() {
-  const pageName = document.body.dataset.page;
+function routePage() {
+  const page = document.body.dataset.page;
 
-  switch (pageName) {
+  switch (page) {
     case "login":
       setupLoginPage();
       break;
 
     case "administrador":
-      protectPage("admin");
+      protectPage("ADMIN");
       break;
 
     case "bibliotecario":
-      protectPage("bibliotecario");
+      protectPage("LIBRARIAN");
       break;
 
     case "leitor":
-      protectPage("leitor");
-      break;
-
-    case "cad-bibliotecario":
-      if (protectPage("admin")) {
-        setupLibrarianForm();
-      }
-      break;
-
-    case "cad-fornecedor":
-      if (protectPage(["admin", "bibliotecario"])) {
-        setupSupplierForm();
-      }
+      protectPage("USER");
       break;
 
     case "cad-leitor":
-      if (protectPage(["admin", "bibliotecario"])) {
-        setupReaderForm();
-      }
+      if (protectPage(["ADMIN", "LIBRARIAN"])) setupReaderForm();
       break;
 
-    case "cad-livro":
-      if (protectPage(["admin", "bibliotecario"])) {
-        setupBookForm();
-      }
+    case "cad-bibliotecario":
+      if (protectPage("ADMIN")) setupLibrarianForm();
+      break;
+
+    case "cad-fornecedor":
+      if (protectPage(["ADMIN", "LIBRARIAN"])) setupSupplierForm();
       break;
 
     case "atu-fornecedor":
-      if (protectPage(["admin", "bibliotecario"])) {
-        setupUpdateSupplierPage();
-      }
+      if (protectPage(["ADMIN", "LIBRARIAN"])) setupUpdateSupplierPage();
+      break;
+
+    case "cad-livro":
+      if (protectPage(["ADMIN", "LIBRARIAN"])) setupBookForm();
       break;
 
     case "atu-livro":
-      if (protectPage(["admin", "bibliotecario"])) {
-        setupUpdateBookPage();
-      }
+      if (protectPage(["ADMIN", "LIBRARIAN"])) setupUpdateBookPage();
       break;
 
     case "consultar":
-      if (protectPage(["leitor", "bibliotecario", "admin"])) {
-        setupCatalogPage();
-      }
+      if (protectPage(["USER", "ADMIN", "LIBRARIAN"])) setupCatalogPage();
+      break;
+
+    case "emprestimos":
+      if (protectPage("USER")) setupReaderLoansPage();
+      break;
+
+    case "devolucao":
+      if (protectPage("USER")) setupReaderReturnPage();
       break;
 
     case "consultar-emprestimos":
-      if (protectPage(["admin", "bibliotecario"])) {
-        setupLoanManagementPage();
+      if (protectPage(["ADMIN", "LIBRARIAN"])) {
+        setSimpleStatus("loan-management-status", "Endpoint geral de empréstimos ainda não existe.");
       }
       break;
 
     case "consultar-devolucoes":
-      if (protectPage(["admin", "bibliotecario"])) {
-        setupReturnManagementPage();
-      }
-      break;
-
-    case "emprestimos":
-      if (protectPage("leitor")) {
-        setupReaderLoansPage();
-      }
-      break;
-
-    case "devolucao":
-      if (protectPage(["leitor", "bibliotecario", "admin"])) {
-        setupReaderReturnPage();
+      if (protectPage(["ADMIN", "LIBRARIAN"])) {
+        setSimpleStatus("return-management-status", "Endpoint geral de devoluções ainda não existe.");
       }
       break;
 
@@ -100,112 +82,44 @@ function runPageController() {
 }
 
 // =========================
-// STORAGE / SESSION
+// STORAGE
 // =========================
-function getToken() {
-  return localStorage.getItem("token");
+function saveSession(session) {
+  localStorage.setItem("auth", JSON.stringify(session));
 }
 
-function setToken(token) {
-  localStorage.setItem("token", token);
-}
-
-function removeToken() {
-  localStorage.removeItem("token");
-}
-
-function getCurrentUser() {
-  const raw = localStorage.getItem("currentUser");
+function getSession() {
+  const raw = localStorage.getItem("auth");
   return raw ? JSON.parse(raw) : null;
 }
 
-function setCurrentUser(user) {
-  localStorage.setItem("currentUser", JSON.stringify(user));
+function clearSession() {
+  localStorage.removeItem("auth");
 }
 
-function clearCurrentUser() {
-  localStorage.removeItem("currentUser");
+function getToken() {
+  return getSession()?.token || null;
+}
+
+function getCurrentUser() {
+  return getSession() || null;
 }
 
 function logout() {
-  removeToken();
-  clearCurrentUser();
-  goTo("index.html");
-}
-
-// =========================
-// AUTH / ROLE
-// =========================
-function parseJwt(token) {
-  try {
-    const payloadBase64 = token.split(".")[1];
-    const normalized = payloadBase64.replace(/-/g, "+").replace(/_/g, "/");
-    const json = atob(normalized);
-    return JSON.parse(json);
-  } catch {
-    return null;
-  }
-}
-
-function normalizeRole(value) {
-  const role = String(value || "").toUpperCase();
-
-  if (role.includes("ADMIN")) return "admin";
-  if (role.includes("LIBRARIAN")) return "bibliotecario";
-  if (role.includes("USER")) return "leitor";
-
-  return "";
-}
-
-function extractRoleFromToken(token) {
-  const payload = parseJwt(token);
-
-  if (!payload) return "";
-
-  return (
-    normalizeRole(payload.role) ||
-    normalizeRole(Array.isArray(payload.roles) ? payload.roles[0] : payload.roles) ||
-    normalizeRole(Array.isArray(payload.authorities) ? payload.authorities[0] : payload.authorities) ||
-    normalizeRole(payload.scope)
-  );
-}
-
-function getHomePageByRole(role) {
-  if (role === "admin") return "administrador.html";
-  if (role === "bibliotecario") return "bibliotecario.html";
-  return "leitor.html";
-}
-
-function protectPage(allowedRoles) {
-  const currentUser = getCurrentUser();
-  const token = getToken();
-
-  if (!currentUser || !token) {
-    goTo("index.html");
-    return false;
-  }
-
-  const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
-
-  if (!roles.includes(currentUser.role)) {
-    goTo(getHomePageByRole(currentUser.role));
-    return false;
-  }
-
-  return true;
+  clearSession();
+  window.location.href = "index.html";
 }
 
 // =========================
 // API
 // =========================
-async function apiRequest(path, options = {}) {
-  const token = getToken();
-
+async function apiFetch(path, options = {}) {
   const headers = {
     ...(options.body ? { "Content-Type": "application/json" } : {}),
     ...(options.headers || {})
   };
 
+  const token = getToken();
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
@@ -215,111 +129,147 @@ async function apiRequest(path, options = {}) {
     headers
   });
 
+  const contentType = response.headers.get("content-type") || "";
+  const isJson = contentType.includes("application/json");
+  const data = isJson ? await response.json() : null;
+
   if (response.status === 401 || response.status === 403) {
     logout();
     throw new Error("Sessão expirada ou acesso negado.");
   }
 
-  const contentType = response.headers.get("content-type") || "";
-  const hasJson = contentType.includes("application/json");
-  const data = hasJson ? await response.json() : null;
-
   if (!response.ok) {
-    const message =
+    throw new Error(
       data?.message ||
       data?.error ||
-      data?.details ||
-      `Erro na requisição (${response.status}).`;
-
-    throw new Error(message);
+      `Erro ${response.status}`
+    );
   }
 
   return data;
 }
 
-async function fetchBooks() {
-  const data = await apiRequest("/books", { method: "GET" });
-  return Array.isArray(data) ? data : (data?.content || []);
+// =========================
+// AUTH / ACCESS
+// =========================
+function protectPage(roles) {
+  const session = getSession();
+
+  if (!session?.token || !session?.role) {
+    window.location.href = "index.html";
+    return false;
+  }
+
+  const allowed = Array.isArray(roles) ? roles : [roles];
+
+  if (!allowed.includes(session.role)) {
+    window.location.href = homeByRole(session.role);
+    return false;
+  }
+
+  return true;
 }
 
-async function fetchSuppliers() {
-  const data = await apiRequest("/suppliers", { method: "GET" });
-  return Array.isArray(data) ? data : (data?.content || []);
+function homeByRole(role) {
+  if (role === "ADMIN") return "administrador.html";
+  if (role === "LIBRARIAN") return "bibliotecario.html";
+  return "leitor.html";
 }
 
 // =========================
-// UI HELPERS
+// GLOBAL NAV
 // =========================
-function setStatus(elementId, message, type = "") {
-  const statusElement = document.getElementById(elementId);
+function setupGlobalNavigation() {
+  document.querySelectorAll("[data-go]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const target = button.dataset.go;
+      if (target) window.location.href = target;
+    });
+  });
 
-  if (!statusElement) {
-    return;
-  }
-
-  statusElement.textContent = message;
-  statusElement.className = `status ${type}`.trim();
+  document.querySelectorAll("[data-logout]").forEach((button) => {
+    button.addEventListener("click", logout);
+  });
 }
 
-function clearStatus(elementId) {
-  setStatus(elementId, "");
+// =========================
+// HELPERS
+// =========================
+function setSimpleStatus(id, message) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = message;
 }
 
-function fillTable(tableBodyId, rows, renderRow, emptyMessage, onRowClick) {
-  const tableBody = document.getElementById(tableBodyId);
+function setStatus(id, message, type = "") {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = message;
+  el.className = `status ${type}`.trim();
+}
 
-  if (!tableBody) {
-    return;
-  }
+function clearStatus(id) {
+  setStatus(id, "");
+}
 
-  tableBody.innerHTML = "";
+function fillTable(tbodyId, rows, renderRow, emptyMessage, onClick) {
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+
+  tbody.innerHTML = "";
 
   if (!rows.length) {
-    const emptyRow = document.createElement("tr");
-    emptyRow.className = "is-empty";
-
-    const emptyCell = document.createElement("td");
-    emptyCell.colSpan = tableBody.dataset.columns || 1;
-    emptyCell.textContent = emptyMessage;
-
-    emptyRow.appendChild(emptyCell);
-    tableBody.appendChild(emptyRow);
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = tbody.dataset.columns || 1;
+    td.textContent = emptyMessage;
+    tr.appendChild(td);
+    tbody.appendChild(tr);
     return;
   }
 
   rows.forEach((rowData) => {
-    const row = document.createElement("tr");
-    row.innerHTML = renderRow(rowData);
+    const tr = document.createElement("tr");
+    tr.innerHTML = renderRow(rowData);
 
-    if (onRowClick) {
-      row.style.cursor = "pointer";
-      row.addEventListener("click", () => onRowClick(rowData, row));
+    if (onClick) {
+      tr.style.cursor = "pointer";
+      tr.addEventListener("click", () => onClick(rowData, tr));
     }
 
-    tableBody.appendChild(row);
+    tbody.appendChild(tr);
   });
 }
 
-function goTo(page) {
-  window.location.href = page;
+function formatDate(value) {
+  if (!value) return "-";
+  return new Date(value).toLocaleDateString("pt-BR");
 }
 
-function wireNavigation() {
-  const logoutButtons = document.querySelectorAll("[data-action='logout']");
-
-  logoutButtons.forEach((button) => {
-    button.addEventListener("click", (event) => {
-      event.preventDefault();
-      logout();
-    });
-  });
-}
-
-// =========================
-// FORMATTERS / VALIDATORS
-// =========================
 function onlyDigits(value) {
   return String(value || "").replace(/\D/g, "");
+}
+
+function validatePhone(value) {
+  const len = onlyDigits(value).length;
+  return len === 10 || len === 11;
+}
+
+function validateCnpj(value) {
+  return onlyDigits(value).length === 14;
+}
+
+function formatPhone(value) {
+  const digits = onlyDigits(value).slice(0, 11);
+
+  if (digits.length <= 10) {
+    return digits
+      .replace(/^(\d{2})(\d)/, "($1) $2")
+      .replace(/(\d{4})(\d)/, "$1-$2");
+  }
+
+  return digits
+    .replace(/^(\d{2})(\d)/, "($1) $2")
+    .replace(/(\d{5})(\d)/, "$1-$2");
 }
 
 function formatCnpj(value) {
@@ -332,227 +282,100 @@ function formatCnpj(value) {
     .replace(/(\d{4})(\d)/, "$1-$2");
 }
 
-function validateCnpj(value) {
-  return onlyDigits(value).length === 14;
-}
-
-function formatPhone(value) {
-  const digits = onlyDigits(value).slice(0, 11);
-
-  if (digits.length <= 10) {
-    return digits
-      .replace(/^(\d{2})(\d)/g, "($1) $2")
-      .replace(/(\d{4})(\d)/, "$1-$2");
-  }
-
-  return digits
-    .replace(/^(\d{2})(\d)/g, "($1) $2")
-    .replace(/(\d{5})(\d)/, "$1-$2");
-}
-
-function validatePhone(value) {
-  const len = onlyDigits(value).length;
-  return len === 10 || len === 11;
-}
-
-function formatDate(dateString) {
-  if (!dateString) return "-";
-
-  const date = new Date(dateString);
-
-  if (Number.isNaN(date.getTime())) {
-    return dateString;
-  }
-
-  return date.toLocaleDateString("pt-BR");
-}
-
 // =========================
-// AUTH PAGES
+// LOGIN
 // =========================
 function setupLoginPage() {
-  const currentUser = getCurrentUser();
-
-  if (currentUser && getToken()) {
-    goTo(getHomePageByRole(currentUser.role));
+  const session = getSession();
+  if (session?.token && session?.role) {
+    window.location.href = homeByRole(session.role);
     return;
   }
 
-  const hintBox = document.querySelector(".hint-box");
-  if (hintBox) {
-    hintBox.innerHTML = `
-      <p><strong>Login via API:</strong> o formulário agora envia os dados para <code>/auth/login</code>.</p>
-      <p>O JWT retornado é armazenado no navegador e enviado automaticamente nas rotas protegidas.</p>
-    `;
-  }
-
-  const loginForm = document.getElementById("login-form");
-  const loginField = document.getElementById("login");
+  const form = document.getElementById("login-form");
+  const usernameField = document.getElementById("login");
   const passwordField = document.getElementById("senha");
 
-  if (!loginForm || !loginField || !passwordField) {
-    return;
-  }
+  if (!form || !usernameField || !passwordField) return;
 
-  loginForm.addEventListener("submit", async (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
     clearStatus("login-status");
 
-    const login = loginField.value.trim();
-    const senha = passwordField.value.trim();
+    const username = usernameField.value.trim();
+    const password = passwordField.value.trim();
 
-    if (!login || !senha) {
+    if (!username || !password) {
       setStatus("login-status", "Informe login e senha.", "error");
       return;
     }
 
     try {
-      const response = await apiRequest("/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ login, senha })
-      });
-
-      if (!response?.token) {
-        throw new Error("A API não retornou o token JWT.");
-      }
-
-      const token = response.token;
-      const role =
-        normalizeRole(response.role) ||
-        extractRoleFromToken(token);
-
-      if (!role) {
-        throw new Error("Não foi possível identificar o papel do usuário no retorno do login/JWT.");
-      }
-
-      setToken(token);
-      setCurrentUser({
-        id: response.id || null,
-        nome: response.nome || login,
-        login,
-        role
-      });
-
-      goTo(getHomePageByRole(role));
-    } catch (error) {
-      setStatus("login-status", error.message || "Falha no login.", "error");
-    }
-  });
-}
-
-function setupLibrarianForm() {
-  const form = document.getElementById("bibliotecario-form");
-  const nameField = document.getElementById("nome");
-  const loginField = document.getElementById("login");
-  const passwordField = document.getElementById("senha");
-
-  if (!form || !nameField || !loginField || !passwordField) {
-    return;
-  }
-
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    clearStatus("bibliotecario-status");
-
-    const nome = nameField.value.trim();
-    const login = loginField.value.trim();
-    const senha = passwordField.value.trim();
-
-    if (nome.length < 3) {
-      setStatus("bibliotecario-status", "Informe um nome com ao menos 3 caracteres.", "error");
-      return;
-    }
-
-    if (login.length < 4) {
-      setStatus("bibliotecario-status", "O login deve ter ao menos 4 caracteres.", "error");
-      return;
-    }
-
-    if (senha.length < 6) {
-      setStatus("bibliotecario-status", "A senha deve ter ao menos 6 caracteres.", "error");
-      return;
-    }
-
-    try {
-      await apiRequest("/auth/register", {
+      const data = await apiFetch("/auth/login", {
         method: "POST",
         body: JSON.stringify({
-          nome,
-          login,
-          senha,
-          role: "LIBRARIAN"
+          username,
+          password
         })
       });
 
-      form.reset();
-      setStatus("bibliotecario-status", "Bibliotecário cadastrado com sucesso.", "success");
+      saveSession({
+        token: data.token,
+        id: data.id,
+        username: data.username,
+        role: data.role
+      });
+
+      window.location.href = homeByRole(data.role);
     } catch (error) {
-      setStatus("bibliotecario-status", error.message, "error");
+      setStatus("login-status", error.message, "error");
     }
   });
 }
 
+// =========================
+// CREATE USER
+// =========================
 function setupReaderForm() {
   const form = document.getElementById("leitor-form");
-  const nameField = document.getElementById("nome");
+  if (!form) return;
+
   const phoneField = document.getElementById("telefone");
-  const addressField = document.getElementById("endereco");
-  const loginField = document.getElementById("login");
-  const passwordField = document.getElementById("senha");
-
-  if (!form || !nameField || !phoneField || !addressField || !loginField || !passwordField) {
-    return;
+  if (phoneField) {
+    phoneField.addEventListener("input", () => {
+      phoneField.value = formatPhone(phoneField.value);
+    });
   }
-
-  phoneField.addEventListener("input", () => {
-    phoneField.value = formatPhone(phoneField.value);
-  });
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     clearStatus("leitor-status");
 
-    const nome = nameField.value.trim();
-    const telefone = phoneField.value.trim();
-    const endereco = addressField.value.trim();
-    const login = loginField.value.trim();
-    const senha = passwordField.value.trim();
+    const name = document.getElementById("nome")?.value.trim() || "";
+    const username = document.getElementById("login")?.value.trim() || "";
+    const password = document.getElementById("senha")?.value.trim() || "";
+    const address = document.getElementById("endereco")?.value.trim() || "";
+    const phone = document.getElementById("telefone")?.value.trim() || "";
 
-    if (nome.length < 3) {
-      setStatus("leitor-status", "Informe um nome com ao menos 3 caracteres.", "error");
+    if (!name || !username || !password || !address || !phone) {
+      setStatus("leitor-status", "Preencha todos os campos.", "error");
       return;
     }
 
-    if (!validatePhone(telefone)) {
-      setStatus("leitor-status", "Informe um telefone válido.", "error");
-      return;
-    }
-
-    if (endereco.length < 5) {
-      setStatus("leitor-status", "Informe um endereço mais completo.", "error");
-      return;
-    }
-
-    if (login.length < 4) {
-      setStatus("leitor-status", "O login deve ter ao menos 4 caracteres.", "error");
-      return;
-    }
-
-    if (senha.length < 6) {
-      setStatus("leitor-status", "A senha deve ter ao menos 6 caracteres.", "error");
+    if (!validatePhone(phone)) {
+      setStatus("leitor-status", "Telefone inválido.", "error");
       return;
     }
 
     try {
-      await apiRequest("/auth/register", {
+      await apiFetch("/auth/register", {
         method: "POST",
         body: JSON.stringify({
-          nome,
-          telefone,
-          endereco,
-          login,
-          senha,
-          role: "USER"
+          name,
+          username,
+          password,
+          address,
+          phone
         })
       });
 
@@ -565,53 +388,92 @@ function setupReaderForm() {
 }
 
 // =========================
-// SUPPLIER PAGES
+// CREATE LIBRARIAN
+// =========================
+function setupLibrarianForm() {
+  const form = document.getElementById("bibliotecario-form");
+  if (!form) return;
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    clearStatus("bibliotecario-status");
+
+    const name = document.getElementById("nome")?.value.trim() || "";
+    const username = document.getElementById("login")?.value.trim() || "";
+    const password = document.getElementById("senha")?.value.trim() || "";
+
+    if (!name || !username || !password) {
+      setStatus("bibliotecario-status", "Preencha todos os campos.", "error");
+      return;
+    }
+
+    try {
+      await apiFetch("/users/librarians", {
+        method: "POST",
+        body: JSON.stringify({
+          name,
+          username,
+          password
+        })
+      });
+
+      form.reset();
+      setStatus("bibliotecario-status", "Bibliotecário cadastrado com sucesso.", "success");
+    } catch (error) {
+      setStatus("bibliotecario-status", error.message, "error");
+    }
+  });
+}
+
+// =========================
+// SUPPLIERS
 // =========================
 function setupSupplierForm() {
   const form = document.getElementById("fornecedor-form");
-  const nameField = document.getElementById("nome");
+  if (!form) return;
+
   const cnpjField = document.getElementById("cnpj");
   const phoneField = document.getElementById("telefone");
 
-  if (!form || !nameField || !cnpjField || !phoneField) {
-    return;
+  if (cnpjField) {
+    cnpjField.addEventListener("input", () => {
+      cnpjField.value = formatCnpj(cnpjField.value);
+    });
   }
 
-  cnpjField.addEventListener("input", () => {
-    cnpjField.value = formatCnpj(cnpjField.value);
-  });
-
-  phoneField.addEventListener("input", () => {
-    phoneField.value = formatPhone(phoneField.value);
-  });
+  if (phoneField) {
+    phoneField.addEventListener("input", () => {
+      phoneField.value = formatPhone(phoneField.value);
+    });
+  }
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     clearStatus("fornecedor-status");
 
-    const nome = nameField.value.trim();
-    const cnpj = cnpjField.value.trim();
-    const telefone = phoneField.value.trim();
+    const name = document.getElementById("nome")?.value.trim() || "";
+    const cnpj = document.getElementById("cnpj")?.value.trim() || "";
+    const phone = document.getElementById("telefone")?.value.trim() || "";
 
-    if (nome.length < 3) {
-      setStatus("fornecedor-status", "Informe um nome com ao menos 3 caracteres.", "error");
+    if (!name || !cnpj || !phone) {
+      setStatus("fornecedor-status", "Preencha todos os campos.", "error");
       return;
     }
 
     if (!validateCnpj(cnpj)) {
-      setStatus("fornecedor-status", "Informe um CNPJ com 14 dígitos.", "error");
+      setStatus("fornecedor-status", "CNPJ inválido.", "error");
       return;
     }
 
-    if (!validatePhone(telefone)) {
-      setStatus("fornecedor-status", "Informe um telefone válido.", "error");
+    if (!validatePhone(phone)) {
+      setStatus("fornecedor-status", "Telefone inválido.", "error");
       return;
     }
 
     try {
-      await apiRequest("/suppliers", {
+      await apiFetch("/suppliers", {
         method: "POST",
-        body: JSON.stringify({ nome, cnpj, telefone })
+        body: JSON.stringify({ name, cnpj, phone })
       });
 
       form.reset();
@@ -624,51 +486,33 @@ function setupSupplierForm() {
 
 function setupUpdateSupplierPage() {
   const form = document.getElementById("update-supplier-form");
-  const nameField = document.getElementById("nome");
-  const cnpjField = document.getElementById("cnpj");
-  const phoneField = document.getElementById("telefone");
-  const chooseSupplierButton = document.getElementById("choose-supplier");
-  const updateButton = document.getElementById("update-supplier-button");
+  const chooseButton = document.getElementById("choose-supplier");
 
-  if (!form || !nameField || !cnpjField || !phoneField || !chooseSupplierButton || !updateButton) {
-    return;
-  }
+  if (!form || !chooseButton) return;
 
   let selectedSupplier = null;
   let selectedRow = null;
-  let suppliersCache = [];
 
-  cnpjField.addEventListener("input", () => {
-    cnpjField.value = formatCnpj(cnpjField.value);
-  });
-
-  phoneField.addEventListener("input", () => {
-    phoneField.value = formatPhone(phoneField.value);
-  });
-
-  async function renderSuppliers() {
+  async function loadSuppliers() {
     try {
-      suppliersCache = await fetchSuppliers();
+      const suppliers = await apiFetch("/suppliers");
 
       fillTable(
         "update-suppliers-body",
-        suppliersCache,
+        suppliers,
         (supplier) => `
-          <td>${supplier.id ?? "-"}</td>
-          <td>${supplier.nome ?? "-"}</td>
-          <td>${supplier.cnpj ?? "-"}</td>
-          <td>${supplier.telefone ?? "-"}</td>
+          <td>${supplier.id}</td>
+          <td>${supplier.name}</td>
+          <td>${supplier.cnpj}</td>
+          <td>${supplier.phone}</td>
         `,
-        "Nenhum fornecedor disponível para edição.",
-        (supplier, row) => {
-          if (selectedRow) {
-            selectedRow.classList.remove("is-selected");
-          }
-
-          row.classList.add("is-selected");
-          selectedRow = row;
+        "Nenhum fornecedor encontrado.",
+        (supplier, tr) => {
+          if (selectedRow) selectedRow.classList.remove("is-selected");
+          tr.classList.add("is-selected");
+          selectedRow = tr;
           selectedSupplier = supplier;
-          chooseSupplierButton.disabled = false;
+          chooseButton.disabled = false;
         }
       );
     } catch (error) {
@@ -676,23 +520,15 @@ function setupUpdateSupplierPage() {
     }
   }
 
-  chooseSupplierButton.addEventListener("click", () => {
-    if (!selectedSupplier) {
-      return;
-    }
+  chooseButton.addEventListener("click", () => {
+    if (!selectedSupplier) return;
 
-    nameField.value = selectedSupplier.nome || "";
-    cnpjField.value = selectedSupplier.cnpj || "";
-    phoneField.value = selectedSupplier.telefone || "";
-    updateButton.disabled = false;
-    chooseSupplierButton.textContent = "Fornecedor Selecionado";
-    chooseSupplierButton.disabled = true;
+    document.getElementById("nome").value = selectedSupplier.name;
+    document.getElementById("cnpj").value = selectedSupplier.cnpj;
+    document.getElementById("telefone").value = selectedSupplier.phone;
 
-    setStatus(
-      "update-supplier-status",
-      `Fornecedor #${selectedSupplier.id} carregado para edição.`,
-      "success"
-    );
+    chooseButton.disabled = true;
+    setStatus("update-supplier-status", "Fornecedor carregado.", "success");
   });
 
   form.addEventListener("submit", async (event) => {
@@ -700,84 +536,67 @@ function setupUpdateSupplierPage() {
     clearStatus("update-supplier-status");
 
     if (!selectedSupplier?.id) {
-      setStatus("update-supplier-status", "Selecione um fornecedor antes de atualizar.", "error");
+      setStatus("update-supplier-status", "Selecione um fornecedor.", "error");
       return;
     }
 
-    const nome = nameField.value.trim();
-    const cnpj = cnpjField.value.trim();
-    const telefone = phoneField.value.trim();
-
-    if (nome.length < 3 || !validateCnpj(cnpj) || !validatePhone(telefone)) {
-      setStatus("update-supplier-status", "Revise os campos informados.", "error");
-      return;
-    }
+    const name = document.getElementById("nome")?.value.trim() || "";
+    const cnpj = document.getElementById("cnpj")?.value.trim() || "";
+    const phone = document.getElementById("telefone")?.value.trim() || "";
 
     try {
-      await apiRequest(`/suppliers/${selectedSupplier.id}`, {
+      await apiFetch(`/suppliers/${selectedSupplier.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ nome, cnpj, telefone })
+        body: JSON.stringify({ name, cnpj, phone })
       });
 
       form.reset();
-      updateButton.disabled = true;
-      chooseSupplierButton.textContent = "Selecionar Fornecedor";
-      chooseSupplierButton.disabled = true;
-
-      if (selectedRow) {
-        selectedRow.classList.remove("is-selected");
-      }
-
       selectedSupplier = null;
+      if (selectedRow) selectedRow.classList.remove("is-selected");
       selectedRow = null;
+      chooseButton.disabled = true;
 
-      await renderSuppliers();
+      await loadSuppliers();
       setStatus("update-supplier-status", "Fornecedor atualizado com sucesso.", "success");
     } catch (error) {
       setStatus("update-supplier-status", error.message, "error");
     }
   });
 
-  renderSuppliers();
+  loadSuppliers();
 }
 
 // =========================
-// BOOK PAGES
+// BOOKS
 // =========================
 function setupBookForm() {
   const form = document.getElementById("livro-form");
   const selectSupplierButton = document.getElementById("select-supplier-button");
-  const selectedSupplierField = document.getElementById("fornecedorId");
-  const selectedSupplierSummary = document.getElementById("selected-supplier-summary");
+  const supplierSummary = document.getElementById("selected-supplier-summary");
 
-  if (!form || !selectSupplierButton || !selectedSupplierField || !selectedSupplierSummary) {
-    return;
-  }
+  if (!form || !selectSupplierButton || !supplierSummary) return;
 
   let selectedSupplier = null;
   let selectedRow = null;
 
-  async function renderSuppliers() {
+  async function loadSuppliers() {
     try {
-      const suppliers = await fetchSuppliers();
+      const suppliers = await apiFetch("/suppliers");
 
       fillTable(
         "suppliers-table-body",
         suppliers,
         (supplier) => `
-          <td>${supplier.id ?? "-"}</td>
-          <td>${supplier.nome ?? "-"}</td>
-          <td>${supplier.cnpj ?? "-"}</td>
-          <td>${supplier.telefone ?? "-"}</td>
+          <td>${supplier.id}</td>
+          <td>${supplier.name}</td>
+          <td>${supplier.cnpj}</td>
+          <td>${supplier.phone}</td>
         `,
-        "Nenhum fornecedor cadastrado.",
-        (supplier, row) => {
-          if (selectedRow) {
-            selectedRow.classList.remove("is-selected");
-          }
-
-          row.classList.add("is-selected");
-          selectedRow = row;
+        "Nenhum fornecedor encontrado.",
+        (supplier, tr) => {
+          if (selectedRow) selectedRow.classList.remove("is-selected");
+          tr.classList.add("is-selected");
+          selectedRow = tr;
           selectedSupplier = supplier;
           selectSupplierButton.disabled = false;
         }
@@ -788,13 +607,8 @@ function setupBookForm() {
   }
 
   selectSupplierButton.addEventListener("click", () => {
-    if (!selectedSupplier) {
-      return;
-    }
-
-    selectedSupplierField.value = String(selectedSupplier.id);
-    selectedSupplierSummary.textContent = `Fornecedor selecionado: ${selectedSupplier.nome}`;
-    selectSupplierButton.textContent = "Fornecedor Selecionado";
+    if (!selectedSupplier) return;
+    supplierSummary.textContent = `Fornecedor selecionado: ${selectedSupplier.name}`;
     selectSupplierButton.disabled = true;
   });
 
@@ -802,241 +616,165 @@ function setupBookForm() {
     event.preventDefault();
     clearStatus("livro-status");
 
-    const titulo = document.getElementById("titulo")?.value.trim() || "";
-    const autor = document.getElementById("autor")?.value.trim() || "";
-    const editora = document.getElementById("editora")?.value.trim() || "";
-    const dataPublicacao = document.getElementById("dataPublicacao")?.value || "";
-    const genero = document.getElementById("genero")?.value.trim() || "";
-    const quantidade = Number(document.getElementById("quantidade")?.value);
-    const fornecedorId = Number(selectedSupplierField.value);
-
-    if (titulo.length < 2 || autor.length < 3 || editora.length < 2 || genero.length < 3) {
-      setStatus("livro-status", "Preencha todos os campos textuais corretamente.", "error");
+    if (!selectedSupplier?.id) {
+      setStatus("livro-status", "Selecione um fornecedor.", "error");
       return;
     }
 
-    if (!dataPublicacao) {
-      setStatus("livro-status", "Informe a data de publicação.", "error");
-      return;
-    }
-
-    if (!Number.isInteger(quantidade) || quantidade < 1) {
-      setStatus("livro-status", "A quantidade deve ser um número inteiro maior que zero.", "error");
-      return;
-    }
-
-    if (!fornecedorId) {
-      setStatus("livro-status", "Selecione um fornecedor para o livro.", "error");
-      return;
-    }
+    const title = document.getElementById("titulo")?.value.trim() || "";
+    const author = document.getElementById("autor")?.value.trim() || "";
+    const publisher = document.getElementById("editora")?.value.trim() || "";
+    const publicationDate = document.getElementById("dataPublicacao")?.value || "";
+    const genre = document.getElementById("genero")?.value.trim() || "";
+    const quantity = Number(document.getElementById("quantidade")?.value);
 
     try {
-      await apiRequest(`/books/supplier/${fornecedorId}`, {
+      await apiFetch(`/books/supplier/${selectedSupplier.id}`, {
         method: "POST",
         body: JSON.stringify({
-          titulo,
-          autor,
-          editora,
-          dataPublicacao,
-          genero,
-          quantidade
+          title,
+          author,
+          publisher,
+          publicationDate,
+          genre,
+          quantity
         })
       });
 
       form.reset();
-      selectedSupplierField.value = "";
-      selectedSupplierSummary.textContent = "Nenhum fornecedor selecionado";
-
-      if (selectedRow) {
-        selectedRow.classList.remove("is-selected");
-      }
-
-      selectedRow = null;
       selectedSupplier = null;
-      selectSupplierButton.textContent = "Selecionar Fornecedor";
+      if (selectedRow) selectedRow.classList.remove("is-selected");
+      selectedRow = null;
+      supplierSummary.textContent = "Nenhum fornecedor selecionado";
       selectSupplierButton.disabled = true;
 
-      await renderSuppliers();
+      await loadSuppliers();
       setStatus("livro-status", "Livro cadastrado com sucesso.", "success");
     } catch (error) {
       setStatus("livro-status", error.message, "error");
     }
   });
 
-  renderSuppliers();
+  loadSuppliers();
 }
 
 function setupUpdateBookPage() {
   const form = document.getElementById("update-book-form");
   const selector = document.getElementById("bookSelector");
-  const titleField = document.getElementById("titulo");
-  const authorField = document.getElementById("autor");
-  const publisherField = document.getElementById("editora");
-  const publishDateField = document.getElementById("dataPublicacao");
-  const genreField = document.getElementById("genero");
-  const quantityField = document.getElementById("quantidade");
-  const note = document.getElementById("book-note");
 
-  if (
-    !form || !selector || !titleField || !authorField || !publisherField ||
-    !publishDateField || !genreField || !quantityField || !note
-  ) {
-    return;
+  if (!form || !selector) return;
+
+  let books = [];
+
+  function loadSelectedBook(bookId) {
+    const book = books.find((item) => String(item.id) === String(bookId));
+    if (!book) return;
+
+    document.getElementById("titulo").value = book.title || "";
+    document.getElementById("autor").value = book.author || "";
+    document.getElementById("editora").value = book.publisher || "";
+    document.getElementById("dataPublicacao").value = String(book.publicationDate || "").split("T")[0];
+    document.getElementById("genero").value = book.genre || "";
+    document.getElementById("quantidade").value = book.quantity ?? 0;
   }
 
-  let booksCache = [];
-
-  function loadBook(bookId) {
-    const book = booksCache.find((item) => Number(item.id) === Number(bookId));
-
-    if (!book) {
-      return;
-    }
-
-    titleField.value = book.titulo || "";
-    authorField.value = book.autor || "";
-    publisherField.value = book.editora || "";
-    publishDateField.value = (book.dataPublicacao || "").split("T")[0];
-    genreField.value = book.genero || "";
-    quantityField.value = book.quantidade ?? 0;
-    note.textContent = `Livro carregado: ${book.titulo || "-"}`;
-  }
-
-  async function populateSelector() {
+  async function loadBooks() {
     try {
-      booksCache = await fetchBooks();
+      books = await apiFetch("/books");
 
-      selector.innerHTML = booksCache
-        .map((book) => `<option value="${book.id}">${book.titulo}</option>`)
+      selector.innerHTML = books
+        .map((book) => `<option value="${book.id}">${book.title}</option>`)
         .join("");
 
-      if (!booksCache.length) {
-        form.reset();
-        note.textContent = "";
-        setStatus("update-book-status", "Nenhum livro cadastrado para edição.", "error");
-        return;
+      if (books.length) {
+        loadSelectedBook(books[0].id);
       }
-
-      clearStatus("update-book-status");
-      loadBook(booksCache[0].id);
     } catch (error) {
       setStatus("update-book-status", error.message, "error");
     }
   }
 
   selector.addEventListener("change", () => {
-    loadBook(selector.value);
+    loadSelectedBook(selector.value);
   });
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     clearStatus("update-book-status");
 
-    const bookId = Number(selector.value);
-    const titulo = titleField.value.trim();
-    const autor = authorField.value.trim();
-    const editora = publisherField.value.trim();
-    const dataPublicacao = publishDateField.value;
-    const genero = genreField.value.trim();
-    const quantidade = Number(quantityField.value);
-
-    if (!bookId) {
-      setStatus("update-book-status", "Selecione um livro.", "error");
-      return;
-    }
-
-    if (titulo.length < 2 || autor.length < 3 || editora.length < 2 || genero.length < 3 || !dataPublicacao) {
-      setStatus("update-book-status", "Revise os dados do livro.", "error");
-      return;
-    }
-
-    if (!Number.isInteger(quantidade) || quantidade < 0) {
-      setStatus("update-book-status", "A quantidade deve ser zero ou maior.", "error");
-      return;
-    }
+    const bookId = selector.value;
+    const title = document.getElementById("titulo")?.value.trim() || "";
+    const author = document.getElementById("autor")?.value.trim() || "";
+    const publisher = document.getElementById("editora")?.value.trim() || "";
+    const publicationDate = document.getElementById("dataPublicacao")?.value || "";
+    const genre = document.getElementById("genero")?.value.trim() || "";
+    const quantity = Number(document.getElementById("quantidade")?.value);
 
     try {
-      await apiRequest(`/books/${bookId}`, {
+      await apiFetch(`/books/${bookId}`, {
         method: "PATCH",
         body: JSON.stringify({
-          titulo,
-          autor,
-          editora,
-          dataPublicacao,
-          genero,
-          quantidade
+          title,
+          author,
+          publisher,
+          publicationDate,
+          genre,
+          quantity
         })
       });
 
-      await populateSelector();
-      selector.value = String(bookId);
-      loadBook(bookId);
-
+      await loadBooks();
+      selector.value = bookId;
+      loadSelectedBook(bookId);
       setStatus("update-book-status", "Livro atualizado com sucesso.", "success");
     } catch (error) {
       setStatus("update-book-status", error.message, "error");
     }
   });
 
-  populateSelector();
+  loadBooks();
 }
 
 // =========================
-// CATALOG / LOAN ACTION
+// CATALOG
 // =========================
 function setupCatalogPage() {
   const searchField = document.getElementById("catalog-search");
   const reserveButton = document.getElementById("reserve-button");
 
-  if (!searchField || !reserveButton) {
-    return;
-  }
+  if (!searchField || !reserveButton) return;
 
-  let booksCache = [];
+  let books = [];
   let selectedBook = null;
   let selectedRow = null;
 
-  async function renderCatalog() {
+  async function renderBooks() {
     try {
-      booksCache = await fetchBooks();
+      books = await apiFetch("/books");
+      const term = searchField.value.trim().toLowerCase();
 
-      const searchTerm = searchField.value.trim().toLowerCase();
-
-      const books = booksCache.filter((book) => {
-        const searchableText = [
-          book.id,
-          book.titulo,
-          book.autor,
-          book.editora,
-          book.genero
-        ]
-          .join(" ")
-          .toLowerCase();
-
-        return !searchTerm || searchableText.includes(searchTerm);
+      const filtered = books.filter((book) => {
+        const text = `${book.title} ${book.author} ${book.publisher} ${book.genre}`.toLowerCase();
+        return !term || text.includes(term);
       });
 
       fillTable(
         "catalog-body",
-        books,
+        filtered,
         (book) => `
-          <td>${book.id ?? "-"}</td>
-          <td>${book.titulo ?? "-"}</td>
-          <td>${book.autor ?? "-"}</td>
-          <td>${book.editora ?? "-"}</td>
-          <td>${book.genero ?? "-"}</td>
-          <td>${book.quantidade ?? 0}</td>
+          <td>${book.title}</td>
+          <td>${book.author}</td>
+          <td>${book.publisher}</td>
+          <td>${book.genre}</td>
+          <td>${book.quantity}</td>
         `,
-        "Nenhum livro encontrado para o filtro informado.",
-        (book, row) => {
-          if (selectedRow) {
-            selectedRow.classList.remove("is-selected");
-          }
-
-          row.classList.add("is-selected");
-          selectedRow = row;
+        "Nenhum livro encontrado.",
+        (book, tr) => {
+          if (selectedRow) selectedRow.classList.remove("is-selected");
+          tr.classList.add("is-selected");
+          selectedRow = tr;
           selectedBook = book;
-          reserveButton.disabled = Number(book.quantidade || 0) < 1;
+          reserveButton.disabled = false;
         }
       );
     } catch (error) {
@@ -1044,112 +782,132 @@ function setupCatalogPage() {
     }
   }
 
-  searchField.addEventListener("input", renderCatalog);
+  searchField.addEventListener("input", renderBooks);
 
   reserveButton.addEventListener("click", async () => {
     clearStatus("catalog-status");
 
-    if (!selectedBook?.id) {
-      setStatus("catalog-status", "Selecione um livro para emprestar.", "error");
-      return;
-    }
+    const user = getCurrentUser();
 
-    if (Number(selectedBook.quantidade || 0) < 1) {
-      setStatus("catalog-status", "Não há exemplares disponíveis para empréstimo.", "error");
+    if (!selectedBook?.id) {
+      setStatus("catalog-status", "Selecione um livro.", "error");
       return;
     }
 
     try {
-      await apiRequest("/loans", {
+      await apiFetch("/loans", {
         method: "POST",
-        body: JSON.stringify({ bookId: selectedBook.id })
+        body: JSON.stringify({
+          userId: user.id,
+          bookId: selectedBook.id
+        })
       });
 
       selectedBook = null;
+      if (selectedRow) selectedRow.classList.remove("is-selected");
+      selectedRow = null;
       reserveButton.disabled = true;
 
-      if (selectedRow) {
-        selectedRow.classList.remove("is-selected");
-      }
-
-      selectedRow = null;
-
-      await renderCatalog();
+      await renderBooks();
       setStatus("catalog-status", "Empréstimo realizado com sucesso.", "success");
     } catch (error) {
       setStatus("catalog-status", error.message, "error");
     }
   });
 
-  renderCatalog();
+  renderBooks();
 }
 
 // =========================
-// PAGES THAT NEED MISSING ENDPOINTS
+// USER LOANS
 // =========================
-function renderApiUnavailableTable(tableBodyId, message) {
-  fillTable(
-    tableBodyId,
-    [],
-    () => "",
-    message
-  );
-}
-
-function setupLoanManagementPage() {
-  setStatus(
-    "loan-management-status",
-    "Esta tela depende de um endpoint de listagem de empréstimos (ex.: GET /loans), que não foi informado.",
-    "error"
-  );
-
-  renderApiUnavailableTable(
-    "loan-management-body",
-    "Listagem indisponível: falta endpoint GET /loans na API."
-  );
-}
-
-function setupReturnManagementPage() {
-  setStatus(
-    "return-management-status",
-    "Esta tela depende de um endpoint de listagem de devoluções (ex.: GET /returns ou GET /loans retornados).",
-    "error"
-  );
-
-  renderApiUnavailableTable(
-    "return-management-body",
-    "Listagem indisponível: falta endpoint GET para devoluções."
-  );
-}
-
 function setupReaderLoansPage() {
-  setStatus(
-    "reader-loans-status",
-    "Esta tela depende de um endpoint para listar empréstimos do usuário (ex.: GET /loans/me).",
-    "error"
-  );
+  const user = getCurrentUser();
+  if (!user?.id) return;
 
-  renderApiUnavailableTable(
-    "reader-loans-body",
-    "Listagem indisponível: falta endpoint GET /loans/me na API."
-  );
+  (async () => {
+    try {
+      const loans = await apiFetch(`/loans/${user.id}`);
+
+      fillTable(
+        "reader-loans-body",
+        loans,
+        (loan) => `
+          <td>${loan.id}</td>
+          <td>${loan.title}</td>
+          <td>${loan.author}</td>
+          <td>${loan.publisher}</td>
+          <td>${loan.genre}</td>
+          <td>${formatDate(loan.dueDate)}</td>
+        `,
+        "Você não possui empréstimos ativos."
+      );
+    } catch (error) {
+      setStatus("reader-loans-status", error.message, "error");
+    }
+  })();
 }
 
 function setupReaderReturnPage() {
+  const user = getCurrentUser();
   const returnButton = document.getElementById("return-book-button");
+  if (!user?.id || !returnButton) return;
 
-  if (returnButton) {
-    returnButton.disabled = true;
+  let selectedLoan = null;
+  let selectedRow = null;
+
+  async function renderLoans() {
+    try {
+      const loans = await apiFetch(`/loans/${user.id}`);
+
+      fillTable(
+        "reader-returns-body",
+        loans,
+        (loan) => `
+          <td>${loan.id}</td>
+          <td>${loan.title}</td>
+          <td>${loan.author}</td>
+          <td>${loan.publisher}</td>
+          <td>${loan.genre}</td>
+        `,
+        "Você não possui livros pendentes para devolução.",
+        (loan, tr) => {
+          if (selectedRow) selectedRow.classList.remove("is-selected");
+          tr.classList.add("is-selected");
+          selectedRow = tr;
+          selectedLoan = loan;
+          returnButton.disabled = false;
+        }
+      );
+    } catch (error) {
+      setStatus("return-book-status", error.message, "error");
+    }
   }
 
-  setStatus(
-    "return-book-status",
-    "Para devolver um livro por seleção em tabela, a API precisa expor listagem de empréstimos ativos do usuário (ex.: GET /loans/me).",
-    "error"
-  );
+  returnButton.addEventListener("click", async () => {
+    clearStatus("return-book-status");
 
-  renderApiUnavailableTable(
-    "reader-returns-body",
-    "Devolução por seleção indisponível: falta endpoint GET /loans/me."
-  );
+    if (!selectedLoan?.id) {
+      setStatus("return-book-status", "Selecione um empréstimo.", "error");
+      return;
+    }
+
+    try {
+      await apiFetch(`/loans/${selectedLoan.id}/return-book`, {
+        method: "POST"
+      });
+
+      selectedLoan = null;
+      if (selectedRow) selectedRow.classList.remove("is-selected");
+      selectedRow = null;
+      returnButton.disabled = true;
+
+      await renderLoans();
+      setStatus("return-book-status", "Livro devolvido com sucesso.", "success");
+    } catch (error) {
+      setStatus("return-book-status", error.message, "error");
+    }
+  });
+
+  renderLoans();
 }
