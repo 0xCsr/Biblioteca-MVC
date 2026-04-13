@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <title>Atualizar Livro</title>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<script src="js/data.js" defer></script>
+<script src="js/navigation.js" defer></script>
+<script src="js/pages.js" defer></script>
+
+</head>
+<body data-page="atu-livro">
+  <main class="app">
+
+    <h1 class="page-title">Atualizar Livro</h1>
+    <section class="form-shell">
+      <div class="form-stack" style="margin-bottom:12px;"><select class="field" id="bookSelector"></select></div>
+      <p id="book-note" class="page-note"></p>
+      <form id="update-book-form" class="form-stack" novalidate>
+        <input class="field" id="titulo" type="text" placeholder="Titulo">
+        <input class="field" id="autor" type="text" placeholder="Autor">
+        <input class="field" id="editora" type="text" placeholder="Editora">
+        <input class="field" id="dataPublicacao" type="date">
+        <input class="field" id="genero" type="text" placeholder="Gênero">
+        <input class="field" id="quantidade" type="number" min="0" step="1" placeholder="Quantidade">
+        <div class="button-row"><button class="btn btn-red" type="button" data-go="bibliotecario.html">Voltar</button><button class="btn btn-green" type="submit">Atualizar</button></div>
+      </form>
+      <p id="update-book-status" class="status"></p>
+      <div class="prototype-links"><a href="wireframes/Tela Atualizar Livro.png" target="_blank">Wireframe da tela</a></div>
+    </section>
+
+  </main>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <title>Cadastrar Livro</title>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<script src="js/data.js" defer></script>
+<script src="js/navigation.js" defer></script>
+<script src="js/pages.js" defer></script>
+
+</head>
+<body data-page="cad-livro">
+  <main class="app">
+
+    <h1 class="page-title">Cadastrar Livro</h1>
+    <section class="panel-grid">
+      <div class="panel">
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead><tr><th>ID</th><th>NOME</th><th>CNPJ</th><th>TELEFONE</th></tr></thead>
+            <tbody id="suppliers-table-body" data-columns="4"></tbody>
+          </table>
+        </div>
+        <div class="button-row" style="justify-content:center;"><button id="select-supplier-button" class="btn btn-gray" type="button" disabled>Selecionar Fornecedor</button></div>
+      </div>
+      <div class="panel">
+        <p id="selected-supplier-summary" class="summary-pill">Nenhum fornecedor selecionado</p>
+        <form id="livro-form" class="form-stack" novalidate style="margin-top:12px;">
+          <input class="field" id="titulo" type="text" placeholder="Titulo">
+          <input class="field" id="autor" type="text" placeholder="Autor">
+          <input class="field" id="editora" type="text" placeholder="Editora">
+          <input class="field" id="dataPublicacao" type="date">
+          <input class="field" id="genero" type="text" placeholder="Gênero">
+          <input class="field" id="quantidade" type="number" min="1" step="1" placeholder="Quantidade">
+          <input class="field" id="fornecedorId" type="text" placeholder="Fornecedor ID" readonly>
+          <div class="button-row"><button class="btn btn-red" type="button" data-go="bibliotecario.html">Voltar</button><button class="btn btn-green" type="submit">Cadastrar</button></div>
+        </form>
+        <p id="livro-status" class="status"></p>
+      </div>
+    </section>
+    <div class="prototype-links"><a href="wireframes/Tela Cadastrar Livro.png" target="_blank">Wireframe da tela</a></div>
+
+  </main>
+</body>
+</html>

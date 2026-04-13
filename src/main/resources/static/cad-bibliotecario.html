@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <title>Cadastrar Bibliotecário</title>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<script src="js/data.js" defer></script>
+<script src="js/navigation.js" defer></script>
+<script src="js/pages.js" defer></script>
+
+</head>
+<body data-page="cad-bibliotecario">
+  <main class="app">
+
+    <h1 class="page-title">Cadastrar Bibliotecario</h1>
+    <section class="form-shell">
+      <form id="bibliotecario-form" class="form-stack" novalidate>
+        <input class="field" id="nome" type="text" placeholder="Nome">
+        <input class="field" id="login" type="text" placeholder="Login">
+        <input class="field" id="senha" type="password" placeholder="Senha">
+        <div class="button-row"><button class="btn btn-red" type="button" data-go="bibliotecario.html">Voltar</button><button class="btn btn-green" type="submit">Cadastrar</button></div>
+      </form><p id="bibliotecario-status" class="status"></p>
+      <div class="prototype-links"><a href="wireframes/Tela Cadastrar Bibliotecario.png" target="_blank">Wireframe da tela</a></div>
+    </section>
+
+  </main>
+</body>
+</html>

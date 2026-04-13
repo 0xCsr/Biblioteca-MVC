@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <title>Atualizar Fornecedor</title>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<script src="js/data.js" defer></script>
+<script src="js/navigation.js" defer></script>
+<script src="js/pages.js" defer></script>
+
+</head>
+<body data-page="atu-fornecedor">
+  <main class="app">
+
+    <h1 class="page-title">Atualizar Fornecedor</h1>
+    <section class="panel-grid">
+      <div class="panel">
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead><tr><th>ID</th><th>NOME</th><th>CNPJ</th><th>TELEFONE</th></tr></thead>
+            <tbody id="update-suppliers-body" data-columns="4"></tbody>
+          </table>
+        </div>
+        <div class="button-row" style="justify-content:center;"><button id="choose-supplier" class="btn btn-green" type="button" disabled>Selecionar Fornecedor</button></div>
+      </div>
+      <div class="panel">
+        <form id="update-supplier-form" class="form-stack" novalidate>
+          <input class="field" id="nome" type="text" placeholder="Nome">
+          <input class="field" id="cnpj" type="text" placeholder="CNPJ">
+          <input class="field" id="telefone" type="text" placeholder="Telefone">
+          <div class="button-row"><button class="btn btn-red" type="button" data-go="bibliotecario.html">Voltar</button><button id="update-supplier-button" class="btn btn-green" type="submit" disabled>Atualizar</button></div>
+        </form>
+        <p id="update-supplier-status" class="status"></p>
+      </div>
+    </section>
+    <div class="prototype-links"><a href="wireframes/Tela Atualizar Fornecedor.png" target="_blank">Wireframe da tela</a></div>
+
+  </main>
+</body>
+</html>

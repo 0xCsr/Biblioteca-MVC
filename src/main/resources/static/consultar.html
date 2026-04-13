@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <title>Consultas</title>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<script src="js/data.js" defer></script>
+<script src="js/navigation.js" defer></script>
+<script src="js/pages.js" defer></script>
+
+</head>
+<body data-page="consultar">
+  <main class="app">
+
+    <h1 class="page-title">Consultas</h1>
+    <section>
+      <div class="toolbar-split"><div></div><input id="catalog-search" class="field search-box" type="search" placeholder="Buscar por:"></div>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead><tr><th>ID</th><th>TITULO</th><th>AUTOR</th><th>EDITORA</th><th>GENERO</th><th>QUANTIDADE</th></tr></thead>
+          <tbody id="catalog-body" data-columns="6"></tbody>
+        </table>
+      </div>
+      <div class="button-row"><button class="btn btn-red" type="button" data-go="leitor.html">Voltar</button><button id="reserve-button" class="btn btn-green" type="button" disabled>Fazer Reserva</button></div>
+      <p id="catalog-status" class="status"></p>
+    </section>
+    <div class="prototype-links"><a href="wireframes/Tela Consultar.png" target="_blank">Wireframe da tela</a></div>
+
+  </main>
+</body>
+</html>

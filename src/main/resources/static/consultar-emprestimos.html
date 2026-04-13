@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <title>Consultar Empréstimos</title>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<script src="js/data.js" defer></script>
+<script src="js/navigation.js" defer></script>
+<script src="js/pages.js" defer></script>
+
+</head>
+<body data-page="consultar-emprestimos">
+  <main class="app">
+
+    <h1 class="page-title">Empréstimos</h1>
+    <section>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead><tr><th>ID</th><th>LEITOR ID</th><th>LIVRO ID</th><th>DATA EMPRESTIMO</th><th>DATA DEVOLUCAO</th></tr></thead>
+          <tbody id="loan-management-body" data-columns="5"></tbody>
+        </table>
+      </div>
+      <div class="button-row"><button class="btn btn-red" type="button" data-go="bibliotecario.html">Voltar</button></div>
+    </section>
+    <div class="prototype-links"><a href="wireframes/Tela Consultar Empréstimos.png" target="_blank">Wireframe da tela</a></div>
+
+  </main>
+</body>
+</html>
