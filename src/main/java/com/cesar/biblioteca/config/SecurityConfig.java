@@ -41,186 +41,67 @@ public class SecurityConfig {
 
     @Value("${jwt.pub.key}")
     private RSAPublicKey pub;
-    
-    // @Bean
-    // public SecurityFilterChain securityFilterChain(HttpSecurity http, UserDetailsService userDetaislService) throws Exception {
-    //     http.csrf(csrf -> csrf.disable())
-    //     .httpBasic(basic -> basic.disable())
-    //     .formLogin(form -> form.disable())
-    //     .authorizeHttpRequests(authorize -> { authorize
-    //             .requestMatchers(
-    //                 "/",
-    //                 "/index.html",
-    //                 "/administrador.html",
-    //                 "/bibliotecario.html",
-    //                 "/leitor.html",
-    //                 "/cad-bibliotecario.html",
-    //                 "/cad-fornecedor.html",
-    //                 "/cad-leitor.html",
-    //                 "/cad-livro.html",
-    //                 "/atu-fornecedor.html",
-    //                 "/atu-livro.html",
-    //                 "/consultar.html",
-    //                 "/consultar-emprestimos.html",
-    //                 "/consultar-devolucoes.html",
-    //                 "/emprestimos.html",
-    //                 "/devolucao.html",
-    //                 "/css/**",
-    //                 "/js/**",
-    //                 "/images/**",
-    //                 "/favicon.ico"
-    //             ).permitAll()
-
-    //             .requestMatchers("/auth/**").permitAll()
-    //             .requestMatchers(HttpMethod.POST, "/loans/**").hasAnyRole("USER", "LIBRARIAN", "ADMIN")
-    //             .requestMatchers(HttpMethod.POST, "/loans/*/return").hasAnyRole("USER", "LIBRARIAN", "ADMIN")
-    //             .requestMatchers(HttpMethod.POST, "/books/**").hasAnyRole("LIBRARIAN", "ADMIN")
-    //             .requestMatchers(HttpMethod.PATCH, "/books/**").hasAnyRole("LIBRARIAN", "ADMIN")
-    //             .requestMatchers(HttpMethod.DELETE, "/books/**").hasAnyRole("ADMIN")
-    //             .requestMatchers("/users/**").hasAnyRole("LIBRARIAN", "ADMIN")
-    //             .anyRequest().authenticated();
-    //         })
-    //         .oauth2ResourceServer(
-    //             oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(customJwtAuthenticationConverter(userDetaislService)))
-    //         );
-
-    //     return http.build();
-    // }
-
-    // @Bean
-    // public SecurityFilterChain securityFilterChain(
-    //         HttpSecurity http,
-    //         UserDetailsService userDetailsService
-    // ) throws Exception {
-
-    //     http
-    //         .csrf(csrf -> csrf.disable())
-    //         .cors(Customizer.withDefaults())
-    //         .httpBasic(basic -> basic.disable())
-    //         .formLogin(form -> form.disable())
-    //         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-    //         .authorizeHttpRequests(auth -> auth
-
-    //             // recursos estáticos comuns
-    //             .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
-
-    //             // páginas e assets do front
-    //             .requestMatchers(
-    //                 "/",
-    //                 "/index.html",
-    //                 "/error",
-    //                 "/favicon.ico",
-    //                 "/css/**",
-    //                 "/js/**"
-    //             ).permitAll()
-
-    //             // autenticação pública
-    //             .requestMatchers("/auth/**").permitAll()
-
-    //             // suppliers
-    //             .requestMatchers(HttpMethod.POST, "/suppliers/**").hasAnyRole("LIBRARIAN", "ADMIN")
-    //             .requestMatchers(HttpMethod.GET, "/suppliers/**").hasAnyRole("LIBRARIAN", "ADMIN")
-    //             .requestMatchers(HttpMethod.PATCH, "/suppliers/**").hasAnyRole("LIBRARIAN", "ADMIN")
-
-    //             // books
-    //             .requestMatchers(HttpMethod.GET, "/books/**").hasAnyRole("USER", "LIBRARIAN", "ADMIN")
-    //             .requestMatchers(HttpMethod.POST, "/books/**").hasAnyRole("LIBRARIAN", "ADMIN")
-    //             .requestMatchers(HttpMethod.PATCH, "/books/**").hasAnyRole("LIBRARIAN", "ADMIN")
-    //             .requestMatchers(HttpMethod.DELETE, "/books/**").hasAnyRole("ADMIN")
-
-    //             // loans
-    //             .requestMatchers(HttpMethod.POST, "/loans").hasAnyRole("USER", "LIBRARIAN", "ADMIN")
-    //             .requestMatchers(HttpMethod.POST, "/loans/*/return-book").hasAnyRole("USER", "LIBRARIAN", "ADMIN")
-
-    //             // qualquer outra coisa fora da API sensível fica pública
-    //             .anyRequest().permitAll()
-    //         )
-    //         .oauth2ResourceServer(oauth -> oauth.jwt(
-    //             jwt -> jwt.jwtAuthenticationConverter(customJwtAuthenticationConverter(userDetailsService))
-    //         ));
-
-    //     return http.build();
-    // }
 
     @Bean
-public SecurityFilterChain securityFilterChain(
-        HttpSecurity http,
-        UserDetailsService userDetailsService
-) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, UserDetailsService userDetailsService) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable())
+            .cors(Customizer.withDefaults())
+            .httpBasic(basic -> basic.disable())
+            .formLogin(form -> form.disable())
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth
+                
+                .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
 
-    http
-        .csrf(csrf -> csrf.disable())
-        .cors(Customizer.withDefaults())
-        .httpBasic(basic -> basic.disable())
-        .formLogin(form -> form.disable())
-        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        .authorizeHttpRequests(auth -> auth
+                .requestMatchers(
+                    "/",
+                    "/index.html",
+                    "/administrador.html",
+                    "/bibliotecario.html",
+                    "/leitor.html",
+                    "/cad-bibliotecario.html",
+                    "/cad-fornecedor.html",
+                    "/cad-leitor.html",
+                    "/cad-livro.html",
+                    "/atu-fornecedor.html",
+                    "/atu-livro.html",
+                    "/consultar.html",
+                    "/consultar-emprestimos.html",
+                    "/consultar-devolucoes.html",
+                    "/emprestimos.html",
+                    "/devolucao.html",
+                    "/error",
+                    "/favicon.ico",
+                    "/css/**",
+                    "/js/**",
+                    "/images/**",
+                    "/wireframes/**"
+                ).permitAll()
 
-            // recursos estáticos padrão
-            .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
+                .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
+                .requestMatchers(HttpMethod.POST, "/users/librarians").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PATCH, "/users/**").hasAnyRole("ADMIN", "LIBRARIAN")
+                .requestMatchers(HttpMethod.GET, "/users/**").hasAnyRole("ADMIN", "LIBRARIAN")
+                .requestMatchers(HttpMethod.POST, "/suppliers/**").hasAnyRole("LIBRARIAN", "ADMIN")
+                .requestMatchers(HttpMethod.GET, "/suppliers/**").hasAnyRole("LIBRARIAN", "ADMIN")
+                .requestMatchers(HttpMethod.PATCH, "/suppliers/**").hasAnyRole("LIBRARIAN", "ADMIN")
+                .requestMatchers(HttpMethod.GET, "/books/**").hasAnyRole("USER", "LIBRARIAN", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/books/**").hasAnyRole("LIBRARIAN", "ADMIN")
+                .requestMatchers(HttpMethod.PATCH, "/books/**").hasAnyRole("LIBRARIAN", "ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/books/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/loans").hasAnyRole("USER", "LIBRARIAN", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/loans/*/return-book").hasAnyRole("USER", "LIBRARIAN", "ADMIN")
+                .requestMatchers(HttpMethod.GET, "/loans/*").hasAnyRole("USER", "LIBRARIAN", "ADMIN")
+                .anyRequest().authenticated()
+            )
+            .oauth2ResourceServer(oauth -> oauth.jwt(
+                jwt -> jwt.jwtAuthenticationConverter(customJwtAuthenticationConverter(userDetailsService))
+            ));
 
-            // front estático
-            .requestMatchers(
-                "/",
-                "/index.html",
-                "/administrador.html",
-                "/bibliotecario.html",
-                "/leitor.html",
-                "/cad-bibliotecario.html",
-                "/cad-fornecedor.html",
-                "/cad-leitor.html",
-                "/cad-livro.html",
-                "/atu-fornecedor.html",
-                "/atu-livro.html",
-                "/consultar.html",
-                "/consultar-emprestimos.html",
-                "/consultar-devolucoes.html",
-                "/emprestimos.html",
-                "/devolucao.html",
-                "/error",
-                "/favicon.ico",
-                "/css/**",
-                "/js/**",
-                "/images/**",
-                "/wireframes/**"
-            ).permitAll()
-
-            // auth pública
-            .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
-            .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
-
-            // users
-            .requestMatchers(HttpMethod.POST, "/users/librarians").hasRole("ADMIN")
-
-            // se existir edição de users comuns:
-            .requestMatchers(HttpMethod.PATCH, "/users/**").hasAnyRole("ADMIN", "LIBRARIAN")
-            .requestMatchers(HttpMethod.GET, "/users/**").hasAnyRole("ADMIN", "LIBRARIAN")
-
-            // suppliers
-            .requestMatchers(HttpMethod.POST, "/suppliers/**").hasAnyRole("LIBRARIAN", "ADMIN")
-            .requestMatchers(HttpMethod.GET, "/suppliers/**").hasAnyRole("LIBRARIAN", "ADMIN")
-            .requestMatchers(HttpMethod.PATCH, "/suppliers/**").hasAnyRole("LIBRARIAN", "ADMIN")
-
-            // books
-            .requestMatchers(HttpMethod.GET, "/books/**").hasAnyRole("USER", "LIBRARIAN", "ADMIN")
-            .requestMatchers(HttpMethod.POST, "/books/**").hasAnyRole("LIBRARIAN", "ADMIN")
-            .requestMatchers(HttpMethod.PATCH, "/books/**").hasAnyRole("LIBRARIAN", "ADMIN")
-            .requestMatchers(HttpMethod.DELETE, "/books/**").hasRole("ADMIN")
-
-            // loans
-            .requestMatchers(HttpMethod.POST, "/loans").hasAnyRole("USER", "LIBRARIAN", "ADMIN")
-            .requestMatchers(HttpMethod.POST, "/loans/*/return-book").hasAnyRole("USER", "LIBRARIAN", "ADMIN")
-            .requestMatchers(HttpMethod.GET, "/loans/*").hasAnyRole("USER", "LIBRARIAN", "ADMIN")
-
-            // qualquer outra API exige autenticação
-            .anyRequest().authenticated()
-        )
-        .oauth2ResourceServer(oauth -> oauth.jwt(
-            jwt -> jwt.jwtAuthenticationConverter(customJwtAuthenticationConverter(userDetailsService))
-        ));
-
-    return http.build();
-}
+        return http.build();
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
