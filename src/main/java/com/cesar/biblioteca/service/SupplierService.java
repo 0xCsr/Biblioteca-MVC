@@ -29,7 +29,9 @@ public class SupplierService {
         String cnpj = request.cnpj() != null ? request.cnpj().trim() : null;
         String phone = request.phone() != null ? request.phone().trim() : null;
 
-        if (name == null || cnpj == null || phone == null) {
+        if (name == null || name.isBlank()
+                || cnpj == null || cnpj.isBlank()
+                || phone == null || phone.isBlank()) {
             throw new IllegalArgumentException("Fill in all fields");
         }
 
@@ -51,7 +53,9 @@ public class SupplierService {
         String cnpj = request.cnpj() != null ? request.cnpj().trim() : null;
         String phone = request.phone() != null ? request.phone().trim() : null;
 
-        if (name == null || cnpj == null || phone == null) {
+        if (name == null || name.isBlank()
+                || cnpj == null || cnpj.isBlank()
+                || phone == null || phone.isBlank()) {
             throw new RuntimeException("Fill in all fields");
         }
 
@@ -65,7 +69,7 @@ public class SupplierService {
 
     public void deleteById(UUID supplierId) {
         if (!supplierRepository.existsById(supplierId)) {
-            throw new RuntimeException("Supplier nout found");
+            throw new RuntimeException("Supplier not found");
         }
 
         supplierRepository.deleteById(supplierId);

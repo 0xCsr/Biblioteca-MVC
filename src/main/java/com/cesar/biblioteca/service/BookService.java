@@ -31,13 +31,18 @@ public class BookService {
             .orElseThrow(() -> new UsernameNotFoundException("Supplier not found"));
 
         String title = request.title() != null ? request.title().trim() : null;
-        String author = request.author() != null ? request.author().trim() : null;;
-        String publisher = request.publisher() != null ? request.publisher().trim() : null;;
-        LocalDate publicationDate = request.publicationDate() != null && request.publicationDate().isBefore(LocalDate.now()) ? request.publicationDate() : null;
-        String genre = request.genre() != null ? request.genre().trim() : null;;
-        Integer quantity = request.quantity() >= 0 ? request.quantity() : null;
+        String author = request.author() != null ? request.author().trim() : null;
+        String publisher = request.publisher() != null ? request.publisher().trim() : null;
+        LocalDate publicationDate = request.publicationDate() != null && request.publicationDate().isBefore(LocalDate.now())
+            ? request.publicationDate()
+            : null;
+        String genre = request.genre() != null ? request.genre().trim() : null;
+        Integer quantity = request.quantity() != null && request.quantity() >= 0 ? request.quantity() : null;
 
-        if (title == null || author == null || publisher == null || genre == null) {
+        if (title == null || title.isBlank()
+                || author == null || author.isBlank()
+                || publisher == null || publisher.isBlank()
+                || genre == null || genre.isBlank()) {
             throw new IllegalArgumentException("Fill in all fields");
         }
 
@@ -66,12 +71,17 @@ public class BookService {
 
         String title = request.title() != null ? request.title().trim() : null;
         String author = request.author() != null ? request.author().trim() : null;
-        String publisher = request.publisher() != null ? request.publisher().trim() : null;;
-        LocalDate publicationDate = request.publicationDate() != null && request.publicationDate().isBefore(LocalDate.now()) ? request.publicationDate() : null;
+        String publisher = request.publisher() != null ? request.publisher().trim() : null;
+        LocalDate publicationDate = request.publicationDate() != null && request.publicationDate().isBefore(LocalDate.now())
+            ? request.publicationDate()
+            : null;
         String genre = request.genre() != null ? request.genre().trim() : null;
-        Integer quantity = request.quantity() >= 0 ? request.quantity() : null;
+        Integer quantity = request.quantity() != null && request.quantity() >= 0 ? request.quantity() : null;
 
-        if (title == null || author == null || publisher == null || genre == null) {
+        if (title == null || title.isBlank()
+                || author == null || author.isBlank()
+                || publisher == null || publisher.isBlank()
+                || genre == null || genre.isBlank()) {
             throw new RuntimeException("Fill in all fields");
         }
 
@@ -89,7 +99,7 @@ public class BookService {
         if (!publicationDate.equals(book.getPublicationDate())) book.setPublicationDate(publicationDate);
         if (!genre.equals(book.getGenre())) book.setGenre(genre);
         if (!quantity.equals(book.getQuantity())) book.setQuantity(quantity);
-    
+
         bookRepository.save(book);
         return BookResponse.toResponse(book);
     }
